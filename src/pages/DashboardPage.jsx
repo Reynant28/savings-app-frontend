@@ -1,19 +1,739 @@
-import Navigation from '../components/LandingNavigation';
+import { useState, useEffect } from 'react';
+import { 
+  Wallet, 
+  Target, 
+  Pencil,
+  Calendar, 
+  Plus, 
+  AlertCircle,
+  Clock,
+  X,
+  TrendingUp,
+  PiggyBank,
+  Gift,
+  Camera
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  return (
-    <div className="min-h-screen bg-linear-to-br from-[#1B211A] via-[#253526] to-[#1B211A]">
-      <Navigation />
+const baseUrl = 'http://127.0.0.1:8000';
+
+function SavingsPage() {
+  const [goals, setGoals] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editGoal, setEditGoal] = useState(null);
+  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
+  const [showEditGoalModal, setShowEditGoalModal] = useState(false);
+  const [showAddDepositModal, setShowAddDepositModal] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+
+  // Form states
+  const [formData, setFormData] = useState({
+    nama_tabungan: '',
+    target_nominal: '',
+    target_tanggal: '',
+    photo_url: '',
+    status: 'aktif'
+  });
+
+  const [newDeposit, setNewDeposit] = useState({
+    nominal: '',
+    tanggal: new Date().toISOString().split('T')[0]
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const [goalsRes, transactionsRes] = await Promise.all([
+        fetch(`${baseUrl}/api/tabungan`, { headers }),
+        fetch(`${baseUrl}/api/riwayat-tabungan`, { headers })
+      ]);
+
+      const goalsData = await goalsRes.json();
+      const transactionsData = await transactionsRes.json();
+
+      if (goalsData.status === 'success') {
+        setGoals(goalsData.data);
+      }
+      if (transactionsData.status === 'success') {
+        setTransactions(transactionsData.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGoalProgress = (goalId, targetNominal) => {
+    const goalTransactions = transactions.filter(t => t.id_tabungan === goalId);
+    const totalDeposit = goalTransactions.reduce((sum, t) => sum + parseFloat(t.nominal), 0);
+    const percentage = (totalDeposit / targetNominal) * 100;
+    return { totalDeposit, percentage: Math.min(percentage, 100) };
+  };
+
+  const getDaysRemaining = (targetDate) => {
+    const today = new Date();
+    const target = new Date(targetDate);
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const handleAddGoal = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id') || 1;
+
+      const response = await fetch(`${baseUrl}/api/tabungan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...formData,
+          id_user: userId
+        })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        setShowAddGoalModal(false);
+        setFormData({
+          nama_tabungan: '',
+          target_nominal: '',
+          target_tanggal: '',
+          photo_url: '',
+          status: 'aktif'
+        });
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error adding goal:', error);
+    }
+  };
+
+  const handleEditGoal = async () => {  // Remove the (goal) parameter
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${baseUrl}/api/tabungan/${selectedGoal.id_tabungan}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...formData,
+          id_user: selectedGoal.id_user  // Include user ID
+        })
+      });
       
-      <div className="pt-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8">Dashboard</h1>
-          
-          <div className="bg-white bg-opacity-5 backdrop-blur-xl p-8 rounded-3xl border border-white border-opacity-10">
-            <p className="text-gray-300">Welcome to your dashboard! Your financial data will appear here.</p>
+      const data = await response.json();
+      if (data.status === 'success') {
+        setShowEditGoalModal(false);
+        setFormData({
+          nama_tabungan: '',
+          target_nominal: '',
+          target_tanggal: '',
+          photo_url: '',
+          status: 'aktif'
+        });
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error editing goal:', error);
+    }
+  };
+
+  const resetFormData = () => {
+    setFormData({
+      nama_tabungan: '',
+      target_nominal: '',
+      target_tanggal: '',
+      photo_url: '',
+      status: 'aktif'
+    });
+  };
+  
+  const handleDeleteGoal = async (goalId) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${baseUrl}/api/tabungan/${goalId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+    }
+  };
+
+  const handleAddDeposit = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(`${baseUrl}/api/riwayat-tabungan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id_tabungan: selectedGoal.id_tabungan,
+          ...newDeposit
+        })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        setShowAddDepositModal(false);
+        setNewDeposit({
+          nominal: '',
+          tanggal: new Date().toISOString().split('T')[0]
+        });
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error adding deposit:', error);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#504B38] flex items-center justify-center">
+        <div className="text-white text-xl">Loading your savings goals...</div>
+      </div>
+    );
+  }
+
+  const activeGoals = goals.filter(goal => goal.status === 'aktif');
+  const completedGoals = goals.filter(goal => {
+    const progress = getGoalProgress(goal.id_tabungan, goal.target_nominal);
+    return progress.percentage >= 100;
+  });
+
+  const urgentGoals = activeGoals.filter(goal => {
+    const daysLeft = getDaysRemaining(goal.target_tanggal);
+    const progress = getGoalProgress(goal.id_tabungan, goal.target_nominal).percentage;
+    return daysLeft < 30 && progress < 100;
+  });
+
+  const recentTransactions = transactions
+    .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+    .slice(0, 3);
+
+  return (
+    <div className="min-h-screen bg-[#504B38] pb-20">
+      {/* Header */}
+      <div className="bg-linear-to-r from-[#536a37] to-[#3e5229] shadow-lg sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-2 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
+                <PiggyBank className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">My Savings</h1>
+                <p className="text-sm text-gray-200">Keep growing your savings</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddGoalModal(true)}
+              className="px-5 py-3 bg-white text-[#536a37] rounded-xl font-semibold hover:bg-gray-100 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+            >
+              <Plus size={20} />
+              New Goal
+            </button>
           </div>
         </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Quick Stats Banner */}
+        {activeGoals.length > 0 && (
+          <div className="mb-8 bg-linear-to-r from-[#536a37]/10 to-[#3e5229]/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
+                  <Target className="w-6 h-6 text-[#7fa654]" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Active Goals</p>
+                  <p className="text-2xl font-bold text-white">{activeGoals.length}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
+                  <Gift className="w-6 h-6 text-[#7fa654]" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Completed</p>
+                  <p className="text-2xl font-bold text-white">{completedGoals.length}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Urgent</p>
+                  <p className="text-2xl font-bold text-white">{urgentGoals.length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Urgent Goals Warning */}
+        {urgentGoals.length > 0 && (
+          <div className="mb-8 bg-linear-to-r from-[#8B0000]/20 to-[#8B0000]/10 backdrop-blur-sm rounded-2xl p-6 border border-red-500/20">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="text-red-400" size={24} />
+              <h2 className="text-xl font-bold text-white">Needs Attention</h2>
+            </div>
+            <p className="text-gray-300 mb-4">These goals are approaching their deadline:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {urgentGoals.slice(0, 4).map(goal => {
+                const daysLeft = getDaysRemaining(goal.target_tanggal);
+                return (
+                  <div key={goal.id_tabungan} className="bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-all">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-white">{goal.nama_tabungan}</h3>
+                      <span className="text-red-400 text-sm font-medium">{daysLeft} days left</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedGoal(goal);
+                        setShowAddDepositModal(true);
+                      }}
+                      className="mt-2 text-sm px-3 py-1.5 bg-[#536a37] text-white rounded-lg hover:bg-[#3e5229] transition-all"
+                    >
+                      Add Deposit
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Main Content - Savings Goals */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <Target size={26} className="text-[#7fa654]" />
+              My Savings Goals
+              <span className="text-sm bg-white/10 px-3 py-1 rounded-full text-gray-300">
+                {activeGoals.length}
+              </span>
+            </h2>
+          </div>
+
+          {activeGoals.length === 0 ? (
+            <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
+              <PiggyBank className="w-20 h-20 text-white-500 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-3">Start Your Savings Journey</h3>
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                Create your first savings goal and start building your future, one step at a time
+              </p>
+              <button
+                onClick={() => setShowAddGoalModal(true)}
+                className="px-8 py-3 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl"
+              >
+                Create Your First Goal
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {activeGoals.map(goal => {
+                const { totalDeposit, percentage } = getGoalProgress(goal.id_tabungan, goal.target_nominal);
+                const daysLeft = getDaysRemaining(goal.target_tanggal);
+                const isUrgent = daysLeft < 30;
+
+                return (
+                  <div
+                    key={goal.id_tabungan}
+                    className={`bg-linear-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-[#536a37]/30 transition-all hover:shadow-xl`}
+                  >
+                    <div className="flex items-start gap-4 mb-6">
+                      {goal.photo_url ? (
+                        <img
+                          src={goal.photo_url}
+                          alt={goal.nama_tabungan}
+                          className="w-20 h-20 rounded-xl object-cover"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-xl bg-linear-to-br from-[#536a37]/20 to-[#3e5229]/20 flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-xl font-bold text-white mb-1">{goal.nama_tabungan}</h3>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className={`flex items-center gap-1 ${isUrgent ? 'text-orange-400' : 'text-gray-400'}`}>
+                                <Clock size={14} />
+                                {daysLeft} days left
+                              </span>
+                              <span className="text-gray-600">•</span>
+                              <span className="text-gray-400">
+                                {new Date(goal.target_tanggal).toLocaleDateString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedGoal(goal);
+                                  // Populate formData with the goal's data
+                                  setFormData({
+                                    nama_tabungan: goal.nama_tabungan,
+                                    target_nominal: goal.target_nominal,
+                                    target_tanggal: goal.target_tanggal.split('T')[0], // Format date properly
+                                    photo_url: goal.photo_url || '',
+                                    status: goal.status
+                                  });
+                                  setShowEditGoalModal(true);
+                                }}
+                                className="px-2 py-2 text-[#7ea053] rounded-lg hover:text-[#678745] transition-all text-sm font-medium"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedGoal(goal);
+                                setShowAddDepositModal(true);
+                              }}
+                              className="px-4 py-2 bg-[#536a37] text-white rounded-lg hover:bg-[#3e5229] transition-all flex items-center gap-2 text-sm font-medium"
+                            >
+                              <Plus size={16} />
+                              Deposit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="mb-5">
+                      <div className="flex justify-between text-sm mb-3">
+                        <div>
+                          <span className="text-gray-400">Progress • </span>
+                          <span className="text-white font-semibold">{percentage.toFixed(0)}%</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-green-400 font-bold">{formatCurrency(totalDeposit)}</div>
+                          <div className="text-xs text-gray-400">saved</div>
+                        </div>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="h-full bg-linnear-to-r from-[#628141] to-[#7fa654] rounded-full transition-all duration-700"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                      <div>
+                        <p className="text-xs text-gray-400">Target</p>
+                        <p className="text-sm font-semibold text-white">{formatCurrency(goal.target_nominal)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Remaining</p>
+                        <p className="text-sm font-semibold text-orange-400">
+                          {formatCurrency(goal.target_nominal - totalDeposit)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Daily needed</p>
+                        <p className="text-sm font-semibold text-white">
+                          {daysLeft > 0 ? formatCurrency((goal.target_nominal - totalDeposit) / daysLeft) : formatCurrency(0)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Activity Sidebar */}
+        {recentTransactions.length > 0 && (
+          <div className="bg-linear-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <TrendingUp size={22} className="text-[#7fa654]" />
+                Recent Activity
+              </h3>
+              <span className="text-sm text-gray-400">Last 3 deposits</span>
+            </div>
+            <div className="space-y-4">
+              {recentTransactions.map(transaction => {
+                const goal = goals.find(g => g.id_tabungan === transaction.id_tabungan);
+                return (
+                  <div key={transaction.id_riwayat} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                    <div className="w-10 h-10 rounded-lg bg-[#536a37]/20 flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-[#7fa654]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-white text-sm">{goal?.nama_tabungan || 'Savings Goal'}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(transaction.tanggal).toLocaleDateString('id-ID', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-400 text-sm">+{formatCurrency(transaction.nominal)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Completed Goals */}
+        {completedGoals.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Gift size={22} className="text-green-500" />
+              Achieved Goals
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {completedGoals.map(goal => (
+                <div key={goal.id_tabungan} className="bg-linear-to-br from-green-500/10 to-green-500/5 backdrop-blur-sm rounded-xl p-5 border border-green-500/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <Gift className="w-5 h-5 text-green-400" />
+                    </div>
+                    <h4 className="font-semibold text-white">{goal.nama_tabungan}</h4>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-2">Successfully completed!</p>
+                  <p className="text-xs text-gray-400">Target: {formatCurrency(goal.target_nominal)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add Goal Modal */}
+      {showAddGoalModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white">Create New Goal</h2>
+                <p className="text-gray-400 mt-2">What are you saving for?</p>
+              </div>
+              <button 
+                onClick={() => setShowAddGoalModal(false)} 
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={28} />
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Goal Name</label>
+                <input
+                  type="text"
+                  value={formData.nama_tabungan}
+                  onChange={(e) => setFormData({ ...formData, nama_tabungan: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="e.g., Vacation to Bali"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Target Amount</label>
+                <input
+                  type="number"
+                  value={formData.target_nominal}
+                  onChange={(e) => setFormData({ ...formData, target_nominal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="15000000"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Target Date</label>
+                <input
+                  type="date"
+                  value={formDdata.target_tanggal}
+                  onChange={(e) => setFormData({ ...formData, target_tanggal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Inspiration Photo (Optional)</label>
+                <input
+                  type="url"
+                  value={formData.photo_url}
+                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="https://example.com/your-dream.jpg"
+                />
+              </div>
+              <button
+                onClick={handleAddGoal}
+                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-lg"
+              >
+                Create Savings Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Goal Modal */}
+      {showEditGoalModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white">Edit Goal</h2>
+                <p className="text-gray-400 mt-2">What are you editing?</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowEditGoalModal(false);
+                  resetFormData();
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={28} />
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Goal Name</label>
+                <input
+                  type="text"
+                  value={formData.nama_tabungan}
+                  onChange={(e) => setFormData({ ...formData, nama_tabungan: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="e.g., Vacation to Bali"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Target Amount</label>
+                <input
+                  type="number"
+                  value={formData.target_nominal}
+                  onChange={(e) => setFormData({ ...formData, target_nominal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="15000000"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Target Date</label>
+                <input
+                  type="date"
+                  value={formData.target_tanggal}
+                  onChange={(e) => setFormData({ ...formData, target_tanggal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Inspiration Photo (Optional)</label>
+                <input
+                  type="url"
+                  value={formData.photo_url}
+                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="https://example.com/your-dream.jpg"
+                />
+              </div>
+              <button
+                onClick={handleEditGoal}
+                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-lg"
+              >
+                Edit Savings Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Deposit Modal */}
+      {showAddDepositModal && selectedGoal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Add Deposit</h2>
+                <p className="text-gray-400 mt-1">Add to: <span className="text-white font-semibold">{selectedGoal.nama_tabungan}</span></p>
+              </div>
+              <button 
+                onClick={() => setShowAddDepositModal(false)} 
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={28} />
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Amount to Deposit</label>
+                <input
+                  type="number"
+                  value={newDeposit.nominal}
+                  onChange={(e) => setNewDeposit({ ...newDeposit, nominal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  placeholder="50000"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-3">Date</label>
+                <input
+                  type="date"
+                  value={newDeposit.tanggal}
+                  onChange={(e) => setNewDeposit({ ...newDeposit, tanggal: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                />
+              </div>
+              <button
+                onClick={handleAddDeposit}
+                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+              >
+                Add Deposit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default SavingsPage;
