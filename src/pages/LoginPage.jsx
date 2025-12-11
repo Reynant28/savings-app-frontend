@@ -4,17 +4,20 @@ import Navigation from '../components/LandingNavigation';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { Wallet } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // Import the hook
 
 const baseUrl = 'http://127.0.0.1:8000';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Get login function from context
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,11 +25,13 @@ function LoginPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    setError(''); // Clear error on input change
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
       const response = await fetch(`${baseUrl}/api/login`, {
@@ -40,11 +45,15 @@ function LoginPage() {
 
       const data = await response.json();
       if (data.status === 'success') {
-        localStorage.setItem('auth_token', data.token);
+        // Use the auth context login function
+        login(data.token, formData.email);
         navigate('/dashboard');
+      } else {
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       console.error('Login error:', err);
+      setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -52,9 +61,8 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#504B38] relative overflow-hidden">
-
       <Navigation />
-
+      
       <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
           
@@ -68,6 +76,13 @@ function LoginPage() {
             <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
             <p className="text-gray-400 mt-1 text-sm">Log in to track your savings</p>
           </div>
+
+          {/* Display error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
+              {error}
+            </div>
+          )}
 
           {/* FORM */}
           <form onSubmit={handleLogin} className="space-y-5">
