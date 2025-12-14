@@ -3,11 +3,14 @@ import {
   Wallet, 
   Target, 
   Pencil,
-  Calendar, 
+  LogOut, 
+  Trash,
   Plus, 
   AlertCircle,
   Clock,
   X,
+  Upload,
+  Save,
   TrendingUp,
   PiggyBank,
   Gift,
@@ -20,9 +23,8 @@ function SavingsPage() {
   const [goals, setGoals] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editGoal, setEditGoal] = useState(null);
-  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
-  const [showEditGoalModal, setShowEditGoalModal] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null); // null = add, object = edit
   const [showAddDepositModal, setShowAddDepositModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
 
@@ -31,7 +33,7 @@ function SavingsPage() {
     nama_tabungan: '',
     target_nominal: '',
     target_tanggal: '',
-    photo_url: '',
+    photo_file: null,
     status: 'aktif'
   });
 
@@ -88,70 +90,63 @@ function SavingsPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const handleAddGoal = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      const userId = localStorage.getItem('user_id') || 1;
+  const openAddGoalModal = () => {
+    setEditingGoal(null);
+    setFormData({
+      nama_tabungan: "",
+      target_nominal: "",
+      target_tanggal: "",
+      photo_file: null,
+      status: "aktif",
+    });
+    setShowGoalModal(true);
+  };
 
-      const response = await fetch(`${baseUrl}/api/tabungan`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...formData,
-          id_user: userId
-        })
-      });
+  const openEditGoalModal = (goal) => {
+    setEditingGoal(goal);
+    setFormData({
+      nama_tabungan: goal.nama_tabungan,
+      target_nominal: goal.target_nominal,
+      target_tanggal: goal.target_tanggal.split("T")[0],
+      photo_file: null, // must be null (browser security rule)
+      status: goal.status,
+    });
+    setShowGoalModal(true);
+  };
 
-      const data = await response.json();
-      if (data.status === 'success') {
-        setShowAddGoalModal(false);
-        setFormData({
-          nama_tabungan: '',
-          target_nominal: '',
-          target_tanggal: '',
-          photo_url: '',
-          status: 'aktif'
-        });
-        fetchData();
-      }
-    } catch (error) {
-      console.error('Error adding goal:', error);
+
+  const handleSubmitGoal = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem('auth_token');
+
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) form.append(key, value);
+    });
+
+    let url = `${baseUrl}/api/tabungan`;
+    if (editingGoal) {
+      url = `${baseUrl}/api/tabungan/${editingGoal.id}`;
+      form.append("_method", "PUT");
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+
+    if (res.ok) {
+      setShowGoalModal(false);
+      fetchData();
     }
   };
 
-  const handleEditGoal = async () => {  // Remove the (goal) parameter
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${baseUrl}/api/tabungan/${selectedGoal.id_tabungan}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...formData,
-          id_user: selectedGoal.id_user  // Include user ID
-        })
-      });
-      
-      const data = await response.json();
-      if (data.status === 'success') {
-        setShowEditGoalModal(false);
-        setFormData({
-          nama_tabungan: '',
-          target_nominal: '',
-          target_tanggal: '',
-          photo_url: '',
-          status: 'aktif'
-        });
-        fetchData();
-      }
-    } catch (error) {
-      console.error('Error editing goal:', error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_id');
+    window.location.href = '/login';
   };
 
   const resetFormData = () => {
@@ -159,7 +154,7 @@ function SavingsPage() {
       nama_tabungan: '',
       target_nominal: '',
       target_tanggal: '',
-      photo_url: '',
+      photo_file: '',
       status: 'aktif'
     });
   };
@@ -254,18 +249,28 @@ function SavingsPage() {
               <div className="w-12 h-12 rounded-xl bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
                 <PiggyBank className="w-7 h-7 text-white" />
               </div>
+
               <div>
                 <h1 className="text-2xl font-bold text-white">My Savings</h1>
                 <p className="text-sm text-gray-200">Keep growing your savings</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowAddGoalModal(true)}
-              className="px-5 py-3 bg-white text-[#536a37] rounded-xl font-semibold hover:bg-gray-100 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
-            >
-              <Plus size={20} />
-              New Goal
-            </button>
+
+            <div className='flex justify-between gap-4'>
+              <button
+                onClick={openAddGoalModal}
+                className="px-3 py-3 bg-white text-[#536a37] rounded-xl font-semibold hover:bg-[#536a37] hover:text-white transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+              >
+                <Plus size={20} />
+                New Goal
+              </button>
+
+              <button
+                onClick={() => handleLogout()}
+                className="px-3 py-3 bg-red-600 text-white rounded-full font-semibold hover:text-red-500 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                <LogOut size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -308,7 +313,7 @@ function SavingsPage() {
           </div>
         )}
 
-        {/* Urgent Goals Warning */}
+        {/* Goals Warning */}
         {urgentGoals.length > 0 && (
           <div className="mb-8 bg-linear-to-r from-[#8B0000]/20 to-[#8B0000]/10 backdrop-blur-sm rounded-2xl p-6 border border-red-500/20">
             <div className="flex items-center gap-3 mb-4">
@@ -361,7 +366,7 @@ function SavingsPage() {
                 Create your first savings goal and start building your future, one step at a time
               </p>
               <button
-                onClick={() => setShowAddGoalModal(true)}
+                onClick={openAddGoalModal}
                 className="px-8 py-3 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl"
               >
                 Create Your First Goal
@@ -380,9 +385,9 @@ function SavingsPage() {
                     className={`bg-linear-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-[#536a37]/30 transition-all hover:shadow-xl`}
                   >
                     <div className="flex items-start gap-4 mb-6">
-                      {goal.photo_url ? (
+                      {goal.photo_file ? (
                         <img
-                          src={goal.photo_url}
+                          src={goal.photo_file}
                           alt={goal.nama_tabungan}
                           className="w-20 h-20 rounded-xl object-cover"
                         />
@@ -409,18 +414,13 @@ function SavingsPage() {
                           <div className="flex items-end gap-2">
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => {
-                                  setSelectedGoal(goal);
-                                  // Populate formData with the goal's data
-                                  setFormData({
-                                    nama_tabungan: goal.nama_tabungan,
-                                    target_nominal: goal.target_nominal,
-                                    target_tanggal: goal.target_tanggal.split('T')[0], // Format date properly
-                                    photo_url: goal.photo_url || '',
-                                    status: goal.status
-                                  });
-                                  setShowEditGoalModal(true);
-                                }}
+                                onClick={() => handleDeleteGoal(goal.id_tabungan)}
+                                className="px-2 py-2 text-red-500 rounded-lg hover:text-red-400 transition-all text-sm font-medium"
+                              >
+                                <Trash size={18} />
+                              </button>
+                              <button
+                                onClick={() => openEditGoalModal(goal)}
                                 className="px-2 py-2 text-[#7ea053] rounded-lg hover:text-[#678745] transition-all text-sm font-medium"
                               >
                                 <Pencil size={18} />
@@ -549,142 +549,174 @@ function SavingsPage() {
         )}
       </div>
 
-      {/* Add Goal Modal */}
-      {showAddGoalModal && (
+      {/* Add or Edit Goal Modal */}
+      {showGoalModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-8">
+          <form
+            onSubmit={handleSubmitGoal}
+            className="bg-[#1a1a1a] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl"
+          >
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-8 pb-4 border-b border-white/10">
               <div>
-                <h2 className="text-3xl font-bold text-white">Create New Goal</h2>
-                <p className="text-gray-400 mt-2">What are you saving for?</p>
-              </div>
-              <button 
-                onClick={() => setShowAddGoalModal(false)} 
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X size={28} />
-              </button>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-white text-sm font-medium mb-3">Goal Name</label>
-                <input
-                  type="text"
-                  value={formData.nama_tabungan}
-                  onChange={(e) => setFormData({ ...formData, nama_tabungan: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="e.g., Vacation to Bali"
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-3">Target Amount</label>
-                <input
-                  type="number"
-                  value={formData.target_nominal}
-                  onChange={(e) => setFormData({ ...formData, target_nominal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="15000000"
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-3">Target Date</label>
-                <input
-                  type="date"
-                  value={formDdata.target_tanggal}
-                  onChange={(e) => setFormData({ ...formData, target_tanggal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-3">Inspiration Photo (Optional)</label>
-                <input
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="https://example.com/your-dream.jpg"
-                />
+                <h2 className="text-2xl font-bold text-white">
+                  {editingGoal ? "✏️ Edit Goal" : "🎯 Create New Goal"}
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  {editingGoal ? "Update your savings goal details" : "What are you saving for?"}
+                </p>
               </div>
               <button
-                onClick={handleAddGoal}
-                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-lg"
+                type="button"
+                onClick={() => setShowGoalModal(false)}
+                className="text-gray-400 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors"
+                aria-label="Close modal"
               >
-                Create Savings Goal
+                <X size={24} />
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Edit Goal Modal */}
-      {showEditGoalModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-white">Edit Goal</h2>
-                <p className="text-gray-400 mt-2">What are you editing?</p>
-              </div>
-              <button 
-                onClick={() => {
-                  setShowEditGoalModal(false);
-                  resetFormData();
-                }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X size={28} />
-              </button>
-            </div>
+            {/* BODY */}
             <div className="space-y-6">
+              {/* Goal Name */}
               <div>
-                <label className="block text-white text-sm font-medium mb-3">Goal Name</label>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Goal Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.nama_tabungan}
-                  onChange={(e) => setFormData({ ...formData, nama_tabungan: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="e.g., Vacation to Bali"
+                  onChange={(e) =>
+                    setFormData({ ...formData, nama_tabungan: e.target.value })
+                  }
+                  placeholder="e.g., New Laptop, Vacation, Emergency Fund"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  required
                 />
               </div>
+
+              {/* Target Amount */}
               <div>
-                <label className="block text-white text-sm font-medium mb-3">Target Amount</label>
-                <input
-                  type="number"
-                  value={formData.target_nominal}
-                  onChange={(e) => setFormData({ ...formData, target_nominal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="15000000"
-                />
+                <label className="block text-white text-sm font-medium mb-2">
+                  Target Amount <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    Rp
+                  </span>
+                  <input
+                    type="number"
+                    value={formData.target_nominal}
+                    onChange={(e) =>
+                      setFormData({ ...formData, target_nominal: e.target.value })
+                    }
+                    placeholder="0"
+                    min="0"
+                    step="1000"
+                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                    required
+                  />
+                </div>
               </div>
+
+              {/* Target Date */}
               <div>
-                <label className="block text-white text-sm font-medium mb-3">Target Date</label>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Target Date <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={formData.target_tanggal}
-                  onChange={(e) => setFormData({ ...formData, target_tanggal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  onChange={(e) =>
+                    setFormData({ ...formData, target_tanggal: e.target.value })
+                  }
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all [color-scheme:dark]"
+                  required
                 />
               </div>
+
+              {/* Inspiration Photo */}
               <div>
-                <label className="block text-white text-sm font-medium mb-3">Inspiration Photo (Optional)</label>
-                <input
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="https://example.com/your-dream.jpg"
-                />
+                <label className="block text-white text-sm font-medium mb-2">
+                  Inspiration Photo (Optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setFormData({ ...formData, photo_file: e.target.files?.[0] })
+                    }
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    id="photo-upload"
+                  />
+                  <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:border-[#7fa654]/50 hover:text-white transition-colors">
+                    <div className="flex items-center justify-center space-x-2">
+                      <Upload size={20} />
+                      <span>
+                        {formData.photo_file ? formData.photo_file.name : "Choose an image..."}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {formData.photo_file && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-400">Selected: {formData.photo_file.name}</p>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={handleEditGoal}
-                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-lg"
-              >
-                Edit Savings Goal
-              </button>
+
+              {/* Current Status (if editing) */}
+              {editingGoal && (
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  >
+                    <option value="aktif">Aktif</option>
+                    <option value="selesai">Selesai</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(false)}
+                  className="flex-1 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-medium hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-gradient-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#6d8f47] hover:to-[#5a763d] active:scale-[0.98] transition-all shadow-lg"
+                >
+                  {editingGoal ? (
+                    <>
+                      <Save className="inline mr-2" size={18} />
+                      Update Goal
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="inline mr-2" size={18} />
+                      Create Goal
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
+
 
       {/* Add Deposit Modal */}
       {showAddDepositModal && selectedGoal && (
