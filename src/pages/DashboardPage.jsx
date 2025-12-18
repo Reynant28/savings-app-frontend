@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { 
-  Wallet, 
-  Target, 
+import {
+  Wallet,
+  Target,
   Pencil,
-  LogOut, 
+  LogOut,
   Trash,
-  Plus, 
+  Plus,
   AlertCircle,
   Clock,
   X,
@@ -14,7 +14,9 @@ import {
   TrendingUp,
   PiggyBank,
   Gift,
-  Camera
+  Camera,
+  LoaderCircle,
+  Banknote,
 } from 'lucide-react';
 
 const baseUrl = 'http://127.0.0.1:8000';
@@ -127,7 +129,7 @@ function SavingsPage() {
 
     let url = `${baseUrl}/api/tabungan`;
     if (editingGoal) {
-      url = `${baseUrl}/api/tabungan/${editingGoal.id}`;
+      url = `${baseUrl}/api/tabungan/${editingGoal.id_tabungan}`;
       form.append("_method", "PUT");
     }
 
@@ -149,16 +151,6 @@ function SavingsPage() {
     window.location.href = '/login';
   };
 
-  const resetFormData = () => {
-    setFormData({
-      nama_tabungan: '',
-      target_nominal: '',
-      target_tanggal: '',
-      photo_file: '',
-      status: 'aktif'
-    });
-  };
-  
   const handleDeleteGoal = async (goalId) => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -217,8 +209,9 @@ function SavingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#504B38] flex items-center justify-center">
-        <div className="text-white text-xl">Loading your savings goals...</div>
+      <div className="min-h-screen bg-[#504B38] flex flex-col items-center justify-center">
+        <Banknote className="mt-4 animate-pulse" size={48} />
+        <div className="text-white text-xl font-semibold">Loading your savings goals...</div>
       </div>
     );
   }
@@ -241,71 +234,70 @@ function SavingsPage() {
 
   return (
     <div className="min-h-screen bg-[#504B38] pb-20">
-      {/* Header */}
-      <div className="bg-linear-to-r from-[#536a37] to-[#3e5229] shadow-lg sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-2 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
-                <PiggyBank className="w-7 h-7 text-white" />
-              </div>
-
-              <div>
-                <h1 className="text-2xl font-bold text-white">My Savings</h1>
-                <p className="text-sm text-gray-200">Keep growing your savings</p>
-              </div>
-            </div>
-
-            <div className='flex justify-between gap-4'>
-              <button
-                onClick={openAddGoalModal}
-                className="px-3 py-3 bg-white text-[#536a37] rounded-xl font-semibold hover:bg-[#536a37] hover:text-white transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
-              >
-                <Plus size={20} />
-                New Goal
-              </button>
-
-              <button
-                onClick={() => handleLogout()}
-                className="px-3 py-3 bg-red-600 text-white rounded-full font-semibold hover:text-red-500 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl active:scale-95">
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-6 p-5 bg-[#536a37] hover:bg-[#4d6233] shadow-lg sticky top-0 z-10 rounded-3xl border border-green-100/10 hover:border-green-100/30 hover:bg- transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
+                  <PiggyBank className="w-7 h-7 text-white" />
+                </div>
+
+                <div>
+                  <h1 className="text-2xl font-bold text-white">My Savings</h1>
+                  <p className="text-sm text-gray-200">Keep growing your savings</p>
+                </div>
+              </div>
+
+              <div className='flex justify-between gap-4'>
+                <button
+                  onClick={openAddGoalModal}
+                  className="px-3 py-3 bg-white text-[#536a37] rounded-xl font-semibold hover:bg-[#536a37] hover:text-white transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+                >
+                  <Plus size={20} />
+                  New Goal
+                </button>
+
+                <button
+                  onClick={() => handleLogout()}
+                  className="px-3 py-3 bg-red-600 text-white rounded-full font-semibold hover:text-red-500 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                  <LogOut size={20} />
+                </button>
+              </div>
+            </div>
+
+        </div>
+
         {/* Quick Stats Banner */}
         {activeGoals.length > 0 && (
-          <div className="mb-8 bg-linear-to-r from-[#536a37]/10 to-[#3e5229]/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+          <div className="mb-8 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gray-400/40 hover:bg-white/7  shadow-lg transition-all">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
                   <Target className="w-6 h-6 text-[#7fa654]" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Active Goals</p>
+                  <p className="text-sm text-white">Active Goals</p>
                   <p className="text-2xl font-bold text-white">{activeGoals.length}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
                   <Gift className="w-6 h-6 text-[#7fa654]" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Completed</p>
+                  <p className="text-sm text-white">Completed</p>
                   <p className="text-2xl font-bold text-white">{completedGoals.length}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
                   <Clock className="w-6 h-6 text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Urgent</p>
+                  <p className="text-sm text-white">Urgent</p>
                   <p className="text-2xl font-bold text-white">{urgentGoals.length}</p>
                 </div>
               </div>
@@ -315,7 +307,7 @@ function SavingsPage() {
 
         {/* Goals Warning */}
         {urgentGoals.length > 0 && (
-          <div className="mb-8 bg-linear-to-r from-[#8B0000]/20 to-[#8B0000]/10 backdrop-blur-sm rounded-2xl p-6 border border-red-500/20">
+          <div className="mb-8 relative rounded-2xl p-6 border border-red-500/10 bg-red-500/10 backdrop-blur-xl shadow-lg hover:border-red-500/30 transition-all">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="text-red-400" size={24} />
               <h2 className="text-xl font-bold text-white">Needs Attention</h2>
@@ -359,7 +351,7 @@ function SavingsPage() {
           </div>
 
           {activeGoals.length === 0 ? (
-            <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
+            <div className="text-center py-16 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all">
               <PiggyBank className="w-20 h-20 text-white-500 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-white mb-3">Start Your Savings Journey</h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
@@ -382,12 +374,12 @@ function SavingsPage() {
                 return (
                   <div
                     key={goal.id_tabungan}
-                    className={`bg-linear-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-[#536a37]/30 transition-all hover:shadow-xl`}
+                    className={`p-6 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all"`}
                   >
                     <div className="flex items-start gap-4 mb-6">
                       {goal.photo_file ? (
                         <img
-                          src={goal.photo_file}
+                          src={goal.photo_url}
                           alt={goal.nama_tabungan}
                           className="w-20 h-20 rounded-xl object-cover"
                         />
@@ -455,7 +447,7 @@ function SavingsPage() {
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                         <div
-                          className="h-full bg-linnear-to-r from-[#628141] to-[#7fa654] rounded-full transition-all duration-700"
+                          className="h-full bg-linear-to-r from-[#628141] to-[#7fa654] animate-pulse rounded-full transition-all duration-700"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -488,7 +480,7 @@ function SavingsPage() {
 
         {/* Recent Activity Sidebar */}
         {recentTransactions.length > 0 && (
-          <div className="bg-linear-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+          <div className="p-6 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7  transition-all">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <TrendingUp size={22} className="text-[#7fa654]" />
@@ -500,7 +492,7 @@ function SavingsPage() {
               {recentTransactions.map(transaction => {
                 const goal = goals.find(g => g.id_tabungan === transaction.id_tabungan);
                 return (
-                  <div key={transaction.id_riwayat} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                  <div key={transaction.id_riwayat} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl transition-all">
                     <div className="w-10 h-10 rounded-lg bg-[#536a37]/20 flex items-center justify-center">
                       <Wallet className="w-5 h-5 text-[#7fa654]" />
                     </div>
@@ -727,8 +719,8 @@ function SavingsPage() {
                 <h2 className="text-2xl font-bold text-white">Add Deposit</h2>
                 <p className="text-gray-400 mt-1">Add to: <span className="text-white font-semibold">{selectedGoal.nama_tabungan}</span></p>
               </div>
-              <button 
-                onClick={() => setShowAddDepositModal(false)} 
+              <button
+                onClick={() => setShowAddDepositModal(false)}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <X size={28} />
