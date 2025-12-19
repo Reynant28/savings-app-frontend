@@ -108,26 +108,9 @@ function LoginPage() {
               required
             />
 
-            <div className="flex items-center justify-between text-sm mt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleChange}
-                  className="w-4 h-4 accent-[#7fa654] rounded"
-                />
-                <span className="text-gray-300">Remember me</span>
-              </label>
-
-              <Link className="text-[#89b86a] hover:text-[#9cca7a] transition-colors">
-                Forgot password?
-              </Link>
-            </div>
-
             <Button
               type="submit"
-              variant="gradient"
+              variant="primary"
               className="w-full py-3 text-base mt-2"
               disabled={isLoading}
             >

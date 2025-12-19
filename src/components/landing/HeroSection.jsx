@@ -20,7 +20,7 @@ function HeroSection() {
         
         <div className="flex gap-4 justify-center">
           <Link to="/register">
-            <Button variant="gradient" className="px-8 py-4 text-lg flex items-center gap-2 transform hover:scale-105">
+            <Button variant="primary" className="px-8 py-4 text-lg flex items-center gap-2 transform ">
               Get Started Free <ChevronRight size={20} />
             </Button>
           </Link>

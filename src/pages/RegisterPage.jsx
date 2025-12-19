@@ -62,7 +62,7 @@ function RegisterPage() {
       <Navigation />
 
       <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-lg">
 
           {/* Header */}
           <div className="text-center mb-8">
@@ -77,9 +77,9 @@ function RegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleRegister} className="space-y-12">
+          <form onSubmit={handleRegister} className="space-y-5">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 type="text"
                 name="username"
@@ -127,12 +127,19 @@ function RegisterPage() {
             <div className="pt-2">
               <Button
                 type="submit"
-                variant="gradient"
-                className="w-full py-3 text-base transform hover:scale-105"
+                variant="primary"
+                className="w-full py-3 text-base transform transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </Button>
+            </div>
+
+            {/* DIVIDER */}
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-white bg-opacity-10" />
+              <span className="text-gray-400 text-xs">or</span>
+              <div className="flex-1 h-px bg-white bg-opacity-10" />
             </div>
 
             {/* Bottom link */}

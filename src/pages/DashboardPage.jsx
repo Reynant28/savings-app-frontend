@@ -17,6 +17,7 @@ import {
   Camera,
   LoaderCircle,
   Banknote,
+  CircleX,
 } from 'lucide-react';
 
 const baseUrl = 'http://127.0.0.1:8000';
@@ -25,6 +26,7 @@ function SavingsPage() {
   const [goals, setGoals] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addLoading, setAddLoading] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null); // null = add, object = edit
   const [showAddDepositModal, setShowAddDepositModal] = useState(false);
@@ -78,10 +80,27 @@ function SavingsPage() {
   };
 
   const getGoalProgress = (goalId, targetNominal) => {
-    const goalTransactions = transactions.filter(t => t.id_tabungan === goalId);
-    const totalDeposit = goalTransactions.reduce((sum, t) => sum + parseFloat(t.nominal), 0);
-    const percentage = (totalDeposit / targetNominal) * 100;
-    return { totalDeposit, percentage: Math.min(percentage, 100) };
+    const goalTransactions = transactions.filter(
+      t => t.id_tabungan === goalId
+    );
+
+    const totalDeposit = goalTransactions.reduce(
+      (sum, t) => sum + Number(t.nominal),
+      0
+    );
+
+    const remaining = Math.max(targetNominal - totalDeposit, 0);
+
+    const percentage =
+      targetNominal > 0
+        ? Math.min((totalDeposit / targetNominal) * 100, 100)
+        : 0;
+
+    return {
+      totalDeposit,
+      remaining,
+      percentage,
+    };
   };
 
   const getDaysRemaining = (targetDate) => {
@@ -119,6 +138,7 @@ function SavingsPage() {
 
   const handleSubmitGoal = async (e) => {
     e.preventDefault();
+    setAddLoading(true);
 
     const token = localStorage.getItem('auth_token');
 
@@ -143,6 +163,7 @@ function SavingsPage() {
       setShowGoalModal(false);
       fetchData();
     }
+    setAddLoading(false);
   };
 
   const handleLogout = () => {
@@ -171,6 +192,7 @@ function SavingsPage() {
 
   const handleAddDeposit = async () => {
     try {
+      setAddLoading(true);
       const token = localStorage.getItem('auth_token');
 
       const response = await fetch(`${baseUrl}/api/riwayat-tabungan`, {
@@ -194,6 +216,8 @@ function SavingsPage() {
         });
         fetchData();
       }
+
+      setAddLoading(false);
     } catch (error) {
       console.error('Error adding deposit:', error);
     }
@@ -207,20 +231,9 @@ function SavingsPage() {
     }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#504B38] flex flex-col items-center justify-center">
-        <Banknote className="mt-4 animate-pulse" size={48} />
-        <div className="text-white text-xl font-semibold">Loading your savings goals...</div>
-      </div>
-    );
-  }
-
   const activeGoals = goals.filter(goal => goal.status === 'aktif');
-  const completedGoals = goals.filter(goal => {
-    const progress = getGoalProgress(goal.id_tabungan, goal.target_nominal);
-    return progress.percentage >= 100;
-  });
+  const completedGoals = goals.filter(goal => goal.status === 'selesai');
+  const canceledGoals = goals.filter(goal => goal.status === 'cancel');
 
   const urgentGoals = activeGoals.filter(goal => {
     const daysLeft = getDaysRemaining(goal.target_tanggal);
@@ -234,6 +247,13 @@ function SavingsPage() {
 
   return (
     <div className="min-h-screen bg-[#504B38] pb-20">
+      {loading && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 flex-col">
+          <LoaderCircle className="mt-4 animate-spin text-white" size={48} />
+          <div className="text-white text-xl font-semibold">Loading your savings goals...</div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6 p-5 bg-[#536a37] hover:bg-[#4d6233] shadow-lg sticky top-0 z-10 rounded-3xl border border-green-100/10 hover:border-green-100/30 hover:bg- transition-all">
@@ -260,7 +280,7 @@ function SavingsPage() {
 
                 <button
                   onClick={() => handleLogout()}
-                  className="px-3 py-3 bg-red-600 text-white rounded-full font-semibold hover:text-red-500 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                  className="px-4 py-4 bg-red-600 text-white rounded-full font-semibold hover:text-red-500 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl active:scale-95">
                   <LogOut size={20} />
                 </button>
               </div>
@@ -316,6 +336,11 @@ function SavingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {urgentGoals.slice(0, 4).map(goal => {
                 const daysLeft = getDaysRemaining(goal.target_tanggal);
+                const { remaining } = getGoalProgress(
+                  goal.id_tabungan,
+                  goal.target_nominal
+                );
+
                 return (
                   <div key={goal.id_tabungan} className="bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-all">
                     <div className="flex items-center justify-between">
@@ -328,6 +353,7 @@ function SavingsPage() {
                         setShowAddDepositModal(true);
                       }}
                       className="mt-2 text-sm px-3 py-1.5 bg-[#536a37] text-white rounded-lg hover:bg-[#3e5229] transition-all"
+                      disabled={remaining === 0}
                     >
                       Add Deposit
                     </button>
@@ -351,7 +377,7 @@ function SavingsPage() {
           </div>
 
           {activeGoals.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all">
+            <div className="text-center py-10 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all">
               <PiggyBank className="w-20 h-20 text-white-500 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-white mb-3">Start Your Savings Journey</h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
@@ -359,7 +385,7 @@ function SavingsPage() {
               </p>
               <button
                 onClick={openAddGoalModal}
-                className="px-8 py-3 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl"
+                className="px-8 py-3 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#536a37] transition-all shadow-lg hover:shadow-xl"
               >
                 Create Your First Goal
               </button>
@@ -367,7 +393,7 @@ function SavingsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {activeGoals.map(goal => {
-                const { totalDeposit, percentage } = getGoalProgress(goal.id_tabungan, goal.target_nominal);
+                const { totalDeposit, percentage, remaining } = getGoalProgress(goal.id_tabungan, goal.target_nominal);
                 const daysLeft = getDaysRemaining(goal.target_tanggal);
                 const isUrgent = daysLeft < 30;
 
@@ -384,7 +410,7 @@ function SavingsPage() {
                           className="w-20 h-20 rounded-xl object-cover"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-xl bg-linear-to-br from-[#536a37]/20 to-[#3e5229]/20 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-xl bg-[#536a37]/20 flex items-center justify-center">
                           <Camera className="w-8 h-8 text-gray-400" />
                         </div>
                       )}
@@ -418,16 +444,18 @@ function SavingsPage() {
                                 <Pencil size={18} />
                               </button>
                             </div>
-                            <button
-                              onClick={() => {
-                                setSelectedGoal(goal);
-                                setShowAddDepositModal(true);
-                              }}
-                              className="px-4 py-2 bg-[#536a37] text-white rounded-lg hover:bg-[#3e5229] transition-all flex items-center gap-2 text-sm font-medium"
-                            >
-                              <Plus size={16} />
-                              Deposit
-                            </button>
+                            {goal.status !== 'selesai' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedGoal(goal);
+                                  setShowAddDepositModal(true);
+                                }}
+                                className="px-4 py-2 bg-[#536a37] text-white rounded-lg hover:bg-[#3e5229] transition-all flex items-center gap-2 text-sm font-medium"
+                              >
+                                <Plus size={16} />
+                                Deposit
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -459,9 +487,8 @@ function SavingsPage() {
                         <p className="text-sm font-semibold text-white">{formatCurrency(goal.target_nominal)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Remaining</p>
-                        <p className="text-sm font-semibold text-orange-400">
-                          {formatCurrency(goal.target_nominal - totalDeposit)}
+                        <p className="text-sm text-gray-300">
+                          Remaining: Rp {remaining.toLocaleString()}
                         </p>
                       </div>
                       <div className="text-right">
@@ -525,7 +552,7 @@ function SavingsPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {completedGoals.map(goal => (
-                <div key={goal.id_tabungan} className="bg-linear-to-br from-green-500/10 to-green-500/5 backdrop-blur-sm rounded-xl p-5 border border-green-500/20">
+                <div key={goal.id_tabungan} className="bg-green-500/10 backdrop-blur-sm rounded-xl p-5 border border-green-500/20">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
                       <Gift className="w-5 h-5 text-green-400" />
@@ -539,6 +566,30 @@ function SavingsPage() {
             </div>
           </div>
         )}
+
+        {/* Completed Goals */}
+        {canceledGoals.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <CircleX size={22} className="text-red-500" />
+              Canceled Goals
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {canceledGoals.map(goal => (
+                <div key={goal.id_tabungan} className="bg-red-500/10 backdrop-blur-sm rounded-xl p-5 border border-red-500/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                      <CircleX className="w-5 h-5 text-red-400" />
+                    </div>
+                    <h4 className="font-semibold text-white">{goal.nama_tabungan}</h4>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-2">Successfully canceled!</p>
+                  <p className="text-xs text-gray-400">Target: {formatCurrency(goal.target_nominal)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add or Edit Goal Modal */}
@@ -546,10 +597,10 @@ function SavingsPage() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <form
             onSubmit={handleSubmitGoal}
-            className="bg-[#1a1a1a] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl"
+            className="bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10 shadow-2xl"
           >
             {/* HEADER */}
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-white/10">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
               <div>
                 <h2 className="text-2xl font-bold text-white">
                   {editingGoal ? "✏️ Edit Goal" : "🎯 Create New Goal"}
@@ -569,7 +620,7 @@ function SavingsPage() {
             </div>
 
             {/* BODY */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Goal Name */}
               <div>
                 <label className="block text-white text-sm font-medium mb-2">
@@ -674,6 +725,7 @@ function SavingsPage() {
                   >
                     <option value="aktif">Aktif</option>
                     <option value="selesai">Selesai</option>
+                    <option value="cancel">Cancel</option>
                   </select>
                 </div>
               )}
@@ -687,22 +739,29 @@ function SavingsPage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#6d8f47] hover:to-[#5a763d] active:scale-[0.98] transition-all shadow-lg"
-                >
-                  {editingGoal ? (
-                    <>
-                      <Save className="inline mr-2" size={18} />
-                      Update Goal
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="inline mr-2" size={18} />
-                      Create Goal
-                    </>
-                  )}
-                </button>
+                {addLoading ? (
+                  <div className="flex-1 py-3 bg-[#506934] text-white rounded-xl font-semibold flex items-center justify-center gap-3 cursor-not-allowed">
+                    <LoaderCircle className="animate-spin" size={20} />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#506934] active:scale-[0.98] transition-all shadow-lg"
+                  >
+                    {editingGoal ? (
+                      <>
+                        <Save className="inline mr-2" size={18} />
+                        Update Goal
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="inline mr-2" size={18} />
+                        Create Goal
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </form>
@@ -746,12 +805,20 @@ function SavingsPage() {
                   className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
                 />
               </div>
-              <button
-                onClick={handleAddDeposit}
-                className="w-full py-4 bg-linear-to-r from-[#628141] to-[#536a37] text-white rounded-xl font-semibold hover:from-[#536a37] hover:to-[#3e5229] transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
-              >
-                Add Deposit
-              </button>
+
+              {addLoading ? (
+                <div className="w-full py-4 bg-[#628141] text-white rounded-xl font-semibold flex items-center justify-center gap-3">
+                  <LoaderCircle className="animate-spin" size={20} />
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleAddDeposit}
+                  className="w-full py-4 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#536a37] transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+                >
+                  Add Deposit
+                </button>
+              )}
             </div>
           </div>
         </div>
