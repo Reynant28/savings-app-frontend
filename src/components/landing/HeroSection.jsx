@@ -1,11 +1,16 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Button from "../ui/Button";
+import { motion } from "framer-motion";
 
 function HeroSection() {
   return (
     <div className="relative z-10 min-h-screen flex items-center justify-center px-4 pt-20">
-      <div className="max-w-5xl mx-auto text-center">
+      <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-5xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 rounded-full mb-6 backdrop-blur-sm">
           <span className="text-[#B9B28A] font-semibold text-sm">✨ Smart Savings Made Simple</span>
         </div>
@@ -30,7 +35,7 @@ function HeroSection() {
             </Button>
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

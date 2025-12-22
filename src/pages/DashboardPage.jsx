@@ -19,6 +19,7 @@ import {
   Banknote,
   CircleX,
 } from 'lucide-react';
+import { motion } from "motion/react"
 
 const baseUrl = 'http://127.0.0.1:8000';
 
@@ -247,16 +248,20 @@ function SavingsPage() {
 
   return (
     <div className="min-h-screen bg-[#504B38] pb-20">
-      {loading && (
+      {/* {loading && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 flex-col">
           <LoaderCircle className="mt-4 animate-spin text-white" size={48} />
           <div className="text-white text-xl font-semibold">Loading your savings goals...</div>
         </div>
-      )}
+      )} */}
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="mb-6 p-5 bg-[#536a37] hover:bg-[#4d6233] shadow-lg sticky top-0 z-10 rounded-3xl border border-green-100/10 hover:border-green-100/30 hover:bg- transition-all">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5, delay: 0.2 }} 
+          className="mb-8 p-5 bg-[#536a37] hover:bg-[#4d6233] shadow-lg sticky top-0 z-10 rounded-3xl border border-green-100/10 hover:border-green-100/30 hover:bg- transition-all">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
@@ -286,11 +291,15 @@ function SavingsPage() {
               </div>
             </div>
 
-        </div>
+        </motion.div>
 
         {/* Quick Stats Banner */}
         {activeGoals.length > 0 && (
-          <div className="mb-8 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gray-400/40 hover:bg-white/7  shadow-lg transition-all">
+          <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gray-400/40 hover:bg-white/7  shadow-lg transition-all">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
@@ -322,12 +331,16 @@ function SavingsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Goals Warning */}
         {urgentGoals.length > 0 && (
-          <div className="mb-8 relative rounded-2xl p-6 border border-red-500/10 bg-red-500/10 backdrop-blur-xl shadow-lg hover:border-red-500/30 transition-all">
+          <motion.div 
+          initial={{ opacity: 0}}
+          animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8 relative rounded-2xl p-6 border border-red-500/10 bg-red-500/10 backdrop-blur-xl shadow-lg hover:border-red-500/30 transition-all">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="text-red-400" size={24} />
               <h2 className="text-xl font-bold text-white">Needs Attention</h2>
@@ -361,7 +374,7 @@ function SavingsPage() {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Main Content - Savings Goals */}
@@ -377,7 +390,11 @@ function SavingsPage() {
           </div>
 
           {activeGoals.length === 0 ? (
-            <div className="text-center py-10 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all">
+            <motion.div 
+            animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            className="text-center py-10 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7 transition-all">
               <PiggyBank className="w-20 h-20 text-white-500 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-white mb-3">Start Your Savings Journey</h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
@@ -389,9 +406,13 @@ function SavingsPage() {
               >
                 Create Your First Goal
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div 
+            animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {activeGoals.map(goal => {
                 const { totalDeposit, percentage, remaining } = getGoalProgress(goal.id_tabungan, goal.target_nominal);
                 const daysLeft = getDaysRemaining(goal.target_tanggal);
@@ -501,13 +522,17 @@ function SavingsPage() {
                   </div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Recent Activity Sidebar */}
         {recentTransactions.length > 0 && (
-          <div className="p-6 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7  transition-all">
+          <motion.div 
+          animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0 }}
+          className="p-6 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-lg hover:border-gray-400/40 hover:bg-white/7  transition-all">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <TrendingUp size={22} className="text-[#7fa654]" />
@@ -540,7 +565,7 @@ function SavingsPage() {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Completed Goals */}
@@ -550,7 +575,11 @@ function SavingsPage() {
               <Gift size={22} className="text-green-500" />
               Achieved Goals
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <motion.div 
+            animate={{ scale: [0.95, 1], opacity: [0, 1] }}
+            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {completedGoals.map(goal => (
                 <div key={goal.id_tabungan} className="bg-green-500/10 backdrop-blur-sm rounded-xl p-5 border border-green-500/20">
                   <div className="flex items-center gap-3 mb-3">
@@ -563,7 +592,7 @@ function SavingsPage() {
                   <p className="text-xs text-gray-400">Target: {formatCurrency(goal.target_nominal)}</p>
                 </div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -594,30 +623,35 @@ function SavingsPage() {
 
       {/* Add or Edit Goal Modal */}
       {showGoalModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.2 } }}
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+        >
           <form
             onSubmit={handleSubmitGoal}
             className="bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10 shadow-2xl"
           >
-            {/* HEADER */}
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  {editingGoal ? "✏️ Edit Goal" : "🎯 Create New Goal"}
-                </h2>
-                <p className="text-gray-400 text-sm mt-1">
-                  {editingGoal ? "Update your savings goal details" : "What are you saving for?"}
-                </p>
+              {/* HEADER */}
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    {editingGoal ? "✏️ Edit Goal" : "🎯 Create New Goal"}
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {editingGoal ? "Update your savings goal details" : "What are you saving for?"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(false)}
+                  className="text-gray-400 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors"
+                  aria-label="Close modal"
+                >
+                  <X size={24} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowGoalModal(false)}
-                className="text-gray-400 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors"
-                aria-label="Close modal"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
             {/* BODY */}
             <div className="space-y-4">
@@ -765,36 +799,53 @@ function SavingsPage() {
               </div>
             </div>
           </form>
-        </div>
+        </motion.div>
       )}
 
 
       {/* Add Deposit Modal */}
       {showAddDepositModal && selectedGoal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#3d3932] rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-8">
+        <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.2 } }}
+        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10 shadow-2xl">
+
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
               <div>
-                <h2 className="text-2xl font-bold text-white">Add Deposit</h2>
+                <h2 className="text-2xl font-bold text-white">🏦 Add Deposit</h2>
                 <p className="text-gray-400 mt-1">Add to: <span className="text-white font-semibold">{selectedGoal.nama_tabungan}</span></p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowAddDepositModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors"
+                aria-label="Close modal"
               >
-                <X size={28} />
+                <X size={24} />
               </button>
             </div>
+
+            {/* BODY */}
             <div className="space-y-6">
               <div>
                 <label className="block text-white text-sm font-medium mb-3">Amount to Deposit</label>
-                <input
-                  type="number"
-                  value={newDeposit.nominal}
-                  onChange={(e) => setNewDeposit({ ...newDeposit, nominal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
-                  placeholder="50000"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    Rp
+                  </span>
+                  <input
+                    type="number"
+                    value={newDeposit.nominal}
+                    onChange={(e) => setNewDeposit({ ...newDeposit, nominal: e.target.value })}
+                    placeholder="0"
+                    min="0"
+                    step="1000"
+                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-white text-sm font-medium mb-3">Date</label>
@@ -802,26 +853,36 @@ function SavingsPage() {
                   type="date"
                   value={newDeposit.tanggal}
                   onChange={(e) => setNewDeposit({ ...newDeposit, tanggal: e.target.value })}
-                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
                 />
               </div>
 
-              {addLoading ? (
-                <div className="w-full py-4 bg-[#628141] text-white rounded-xl font-semibold flex items-center justify-center gap-3">
-                  <LoaderCircle className="animate-spin" size={20} />
-                  <span>Loading...</span>
-                </div>
-              ) : (
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
                 <button
-                  onClick={handleAddDeposit}
-                  className="w-full py-4 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#536a37] transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+                  type="button"
+                  onClick={() => setShowAddDepositModal(false)}
+                  className="flex-1 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-medium hover:bg-white/10 transition-colors"
                 >
-                  Add Deposit
+                  Cancel
                 </button>
-              )}
+                {addLoading ? (
+                  <div className="flex-1 py-3 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#506934] active:scale-[0.98] transition-all shadow-lg">
+                    <LoaderCircle className="animate-spin" size={20} />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleAddDeposit}
+                    className="flex-1 py-3 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#506934] active:scale-[0.98] transition-all shadow-lg"
+                  >
+                    Add Deposit
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

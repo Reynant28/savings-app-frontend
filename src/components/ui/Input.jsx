@@ -27,7 +27,7 @@ export default function Input({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-gray-700 placeholder-gray-400 shadow-md focus:outline-none focus:border-[#7fa654] focus:border-opacity-60 transition-all backdrop-blur-sm ${showPasswordToggle ? 'pr-12' : ''} ${className}`}
+          className={`w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all ${showPasswordToggle ? 'pr-12' : ''} ${className}`}
           {...props}
         />
         {showPasswordToggle && (
