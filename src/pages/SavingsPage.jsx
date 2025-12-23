@@ -9,6 +9,9 @@ import CanceledCard from '../components/savings/CanceledCard';
 import GoalsModal from '../components/savings/GoalsModal';
 import DepositModal from '../components/savings/DepositModal';
 import SavingsSkeleton from '../components/savings/skeletons/SavingsSkeleton';
+import DeleteConfirmModal from '../components/savings/modal/DeleteConfirmModal';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Target, Gift, XCircle, Trash } from 'lucide-react';
 
 const baseUrl = 'http://127.0.0.1:8000';
 
@@ -19,8 +22,12 @@ function SavingsPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null); // null = add, object = edit
+  const [activeTab, setActiveTab] = useState('aktif');
   const [showAddDepositModal, setShowAddDepositModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -162,21 +169,31 @@ function SavingsPage() {
     window.location.href = '/login';
   };
 
-  const handleDeleteGoal = async (goalId) => {
+  const openDeleteModal = (goal) => {
+    console.log("Goal to delete:", goal); // Check your browser console
+    setGoalToDelete(goal);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!goalToDelete) return;
+    
+    setDeleteLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${baseUrl}/api/tabungan/${goalId}`, {
+      const response = await fetch(`${baseUrl}/api/tabungan/${goalToDelete.id_tabungan}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
-      if (data.status === 'success') {
+      
+      if (response.ok) {
+        setShowDeleteModal(false);
         fetchData();
       }
     } catch (error) {
       console.error('Error deleting goal:', error);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -235,6 +252,26 @@ function SavingsPage() {
     .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
     .slice(0, 3);
 
+  const TabButton = ({ id, label, count, icon: Icon }) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`relative flex items-center gap-2 px-4 py-2 transition-all ${
+        activeTab === id ? "text-white" : "text-gray-400 hover:text-gray-200"
+      }`}
+    >
+      <Icon size={18} />
+      <span className="font-medium">{label}</span>
+      <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full">{count}</span>
+      
+      {activeTab === id && (
+        <motion.div
+          layoutId="activeTab"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7fa654]"
+        />
+      )}
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-[#504B38] pb-20">
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -263,30 +300,59 @@ function SavingsPage() {
               setShowAddDepositModal={setShowAddDepositModal}
             />
 
-            <GoalsSection
-              activeGoals={activeGoals}
-              getGoalProgress={getGoalProgress}
-              getDaysRemaining={getDaysRemaining}
-              formatCurrency={formatCurrency}
-              openAddGoalModal={openAddGoalModal}
-              openEditGoalModal={openEditGoalModal}
-              handleDeleteGoal={handleDeleteGoal}
-              setSelectedGoal={setSelectedGoal}
-              setShowAddDepositModal={setShowAddDepositModal}
+            <div className="flex items-center gap-4 mb-6 border-b border-white/10">
+              <TabButton id="aktif" label="Active" count={activeGoals.length} icon={Target} />
+              <TabButton id="selesai" label="Completed" count={completedGoals.length} icon={Gift} />
+              <TabButton id="cancel" label="Canceled" count={canceledGoals.length} icon={XCircle} />
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'selesai' && (
+                  <CompletedCard 
+                    completedGoals={completedGoals} 
+                    formatCurrency={formatCurrency}
+                  />
+                )}
+                {activeTab === 'cancel' && (
+                  <CanceledCard 
+                    canceledGoals={canceledGoals} 
+                    formatCurrency={formatCurrency}
+                  />
+                )}
+                {activeTab === 'aktif' && (
+                  
+                  <GoalsSection
+                    activeGoals={activeGoals}
+                    getGoalProgress={getGoalProgress}
+                    getDaysRemaining={getDaysRemaining}
+                    formatCurrency={formatCurrency}
+                    openAddGoalModal={openAddGoalModal}
+                    openEditGoalModal={openEditGoalModal}
+                    handleDeleteGoal={openDeleteModal}
+                    setSelectedGoal={setSelectedGoal}
+                    setShowAddDepositModal={setShowAddDepositModal}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            <DeleteConfirmModal
+              isOpen={showDeleteModal}
+              onClose={() => setShowDeleteModal(false)}
+              onConfirm={handleConfirmDelete}
+              title={goalToDelete?.nama_tabungan}
+              loading={deleteLoading}
             />
 
             <RecentActivity
               recentTransactions={recentTransactions}
               goals={goals}
-              formatCurrency={formatCurrency}
-            />
-
-            <CompletedCard 
-              completedGoals={completedGoals} 
-              formatCurrency={formatCurrency}
-            />
-            <CanceledCard 
-              canceledGoals={canceledGoals} 
               formatCurrency={formatCurrency}
             />
           </>

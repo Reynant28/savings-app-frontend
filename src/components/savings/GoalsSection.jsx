@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Target, PiggyBank, Clock, Camera, Trash, Pencil, Plus } from "lucide-react";
 
-export default function GoalsSection( { activeGoals, getGoalProgress, getDaysRemaining, formatCurrency, openAddGoalModal, openEditGoalModal, handleDeleteGoal, setSelectedGoal, setShowAddDepositModal } ) {
+export default function GoalsSection({ activeGoals, getGoalProgress, getDaysRemaining, formatCurrency, openAddGoalModal, openEditGoalModal, handleDeleteGoal, setSelectedGoal, setShowAddDepositModal }) {
     return (
         <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -78,7 +78,7 @@ export default function GoalsSection( { activeGoals, getGoalProgress, getDaysRem
                                             <div className="flex items-end gap-2">
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => handleDeleteGoal(goal.id_tabungan)}
+                                                        onClick={() => handleDeleteGoal(goal)}
                                                         className="px-2 py-2 text-red-500 rounded-lg hover:text-red-400 focus:outline-gray-300/20 focus:outline-2 focus:outline-offset-1 drop-shadow-lg transition-all text-sm font-medium"
                                                     >
                                                         <Trash size={18} />
