@@ -3,7 +3,7 @@ import './App.css'
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import LandingPage from "./pages/LandingPage";
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage from "./pages/SavingsPage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";

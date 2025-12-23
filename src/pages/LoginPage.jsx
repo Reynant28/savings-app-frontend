@@ -120,7 +120,7 @@ function LoginPage() {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full py-3 text-base mt-2"
+                className="w-full py-3 text-base mt-2 focus:outline-gray-300/50 focus:outline-2 focus:outline-offset-2 drop-shadow-lg"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
@@ -137,7 +137,7 @@ function LoginPage() {
             {/* FOOTER */}
             <p className="text-center text-sm text-gray-400">
               Don't have an account?{' '}
-              <Link className="text-[#89b86a] font-semibold hover:text-[#9cca7a] transition-colors" to="/register">
+              <Link className="text-[#89b86a] font-semibold hover:text-[#9cca7a] transition-colors rounded-md focus:outline-gray-300/50 focus:outline-2 focus:outline-offset-1 drop-shadow-lg" to="/register">
                 Sign up
               </Link>
             </p>
