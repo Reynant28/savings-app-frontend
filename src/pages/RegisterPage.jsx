@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 
 const baseUrl = 'http://127.0.0.1:8000';
 
+
 function RegisterPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -17,23 +18,26 @@ function RegisterPage() {
     confirmPassword: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+    setError('');
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
+      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
 
     try {
       const response = await fetch(`${baseUrl}/api/register`, {
@@ -47,12 +51,28 @@ function RegisterPage() {
       });
 
       const data = await response.json();
-      if (data.status === 'success') {
+
+      if (response.ok && data.status === 'success') {
         localStorage.setItem('auth_token', data.token);
         navigate('/dashboard');
+      } else {
+        // Handle Laravel Validation Errors (422 Unprocessable Entity)
+        if (data.errors) {
+          // Get the first error message from the email field if it exists
+          if (data.errors.email) {
+            setError(data.errors.email[0]);
+          } else if (data.errors.username) {
+            setError(data.errors.username[0]);
+          } else {
+            setError('Registration failed. Please check your data.');
+          }
+        } else {
+          setError(data.message || 'Something went wrong');
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
+      setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +100,13 @@ function RegisterPage() {
             <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
             <p className="text-gray-400 text-sm">Start your savings journey today</p>
           </motion.div>
+
+          {/* Display error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Form */}
           <motion.div 

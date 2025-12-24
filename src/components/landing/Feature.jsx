@@ -1,21 +1,21 @@
-import { TrendingUp, Shield, PiggyBank } from "lucide-react";
+import { TrendingUp, Target, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
   {
+    icon: Target,
+    title: "Goal-Oriented Saving",
+    description: "Create dedicated spaces for your dreams from new gadgets to emergency funds.",
+  },
+  {
+    icon: Clock, 
+    title: "Deadline Tracking",
+    description: "Stay motivated with smart countdowns that show exactly how much time is left to reach your target.",
+  },
+  {
     icon: TrendingUp,
-    title: "Track Progress",
-    description: "Monitor your savings goals and watch your wealth grow in real-time.",
-  },
-  {
-    icon: Shield,
-    title: "Secure & Private",
-    description: "Your financial data is encrypted and protected with bank-level security.",
-  },
-  {
-    icon: PiggyBank,
-    title: "Smart Goals",
-    description: "Set personalized savings goals and get insights to reach them faster.",
+    title: "Visual Progress",
+    description: "Detailed progress bars and deposit history keep you accountable every step of the way.",
   },
 ];
 

@@ -12,15 +12,15 @@ function HeroSection() {
       transition={{ duration: 0.5 }}
       className="max-w-5xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 rounded-full mb-6 backdrop-blur-sm">
-          <span className="text-[#B9B28A] font-semibold text-sm">✨ Smart Savings Made Simple</span>
+          <span className="text-[#B9B28A] font-semibold text-sm">✨ Visualize Your Progress</span>
         </div>
         
         <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
-          Take Control of<br />Your <span className="text-[#7fa654]">Financial Future</span>
+          Turn Your Dreams Into<br />Real <span className="text-[#7fa654]">Savings Goals</span>
         </h1>
         
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Track your savings, set goals, and achieve financial freedom with Savings App's intelligent money management system.
+          Stop just wondering where your money goes. Track every deposit, set deadlines, and watch your progress bars climb toward your next big milestone.
         </p>
         
         <div className="flex gap-4 justify-center">

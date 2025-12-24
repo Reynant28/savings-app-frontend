@@ -138,8 +138,8 @@ export default function GoalsModal({ showGoalModal, setShowGoalModal, editingGoa
                   }
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#7fa654] focus:ring-2 focus:ring-[#7fa654]/30 transition-all"
                 >
-                  <option value="aktif">Aktif</option>
-                  <option value="selesai">Selesai</option>
+                  <option value="aktif">Active</option>
+                  <option value="selesai">Completed</option>
                   <option value="cancel">Cancel</option>
                 </select>
               </div>
@@ -147,20 +147,24 @@ export default function GoalsModal({ showGoalModal, setShowGoalModal, editingGoa
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => setShowGoalModal(false)}
                 className="flex-1 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-medium hover:bg-white/10 focus:outline-gray-300/50 focus:outline-2 focus:outline-offset-1 drop-shadow-lg transition-colors"
               >
                 Cancel
-              </button>
+              </motion.button>
               {addLoading ? (
                 <div className="flex-1 py-3 bg-[#506934] text-white rounded-xl font-semibold flex items-center justify-center gap-3 cursor-not-allowed">
                   <LoaderCircle className="animate-spin" size={20} />
                   <span>Loading...</span>
                 </div>
               ) : (
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   type="submit"
                   className="flex-1 py-3 bg-[#628141] text-white rounded-xl font-semibold hover:bg-[#506934] focus:outline-gray-300/50 focus:outline-2 focus:outline-offset-1 drop-shadow-lg active:scale-[0.98] transition-all shadow-lg"
                 >
@@ -175,7 +179,7 @@ export default function GoalsModal({ showGoalModal, setShowGoalModal, editingGoa
                       Create Goal
                     </>
                   )}
-                </button>
+                </motion.button>
               )}
             </div>
           </div>

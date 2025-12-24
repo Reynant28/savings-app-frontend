@@ -1,33 +1,43 @@
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Target, Gift, XCircle, Trash } from 'lucide-react';
+
 import SavingsHeader from '../components/savings/SavingsHeader';
 import StatsCard from '../components/savings/StatsCard';
 import WarningGoals from '../components/savings/WarningGoals';
 import GoalsSection from '../components/savings/GoalsSection';
 import RecentActivity from '../components/savings/RecentActivity';
-import CompletedCard from '../components/savings/CompletedCard';
-import CanceledCard from '../components/savings/CanceledCard';
-import GoalsModal from '../components/savings/GoalsModal';
-import DepositModal from '../components/savings/DepositModal';
+import GoalsModal from '../components/savings/modals/GoalsModal';
+import DepositModal from '../components/savings/modals/DepositModal';
 import SavingsSkeleton from '../components/savings/skeletons/SavingsSkeleton';
-import DeleteConfirmModal from '../components/savings/modal/DeleteConfirmModal';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Target, Gift, XCircle, Trash } from 'lucide-react';
+import DeleteConfirmModal from '../components/savings/modals/DeleteConfirmModal';
+import StatusGoalCard from '../components/savings/StatusGoalCard';
+import SuccessModal from '../components/savings/modals/SuccessModal';
 
 const baseUrl = 'http://127.0.0.1:8000';
 
 function SavingsPage() {
+  // Data states
   const [goals, setGoals] = useState([]);
   const [transactions, setTransactions] = useState([]);
+
+  // Loading states
   const [loading, setLoading] = useState(true);
   const [addLoading, setAddLoading] = useState(false);
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null); // null = add, object = edit
-  const [activeTab, setActiveTab] = useState('aktif');
-  const [showAddDepositModal, setShowAddDepositModal] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [goalToDelete, setGoalToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Modal states
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showAddDepositModal, setShowAddDepositModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Other states
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [activeTab, setActiveTab] = useState('aktif');
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [goalToDelete, setGoalToDelete] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -43,6 +53,7 @@ function SavingsPage() {
     tanggal: new Date().toISOString().split('T')[0]
   });
 
+  // Fetch data
   useEffect(() => {
     fetchData();
   }, []);
@@ -76,6 +87,7 @@ function SavingsPage() {
     }
   };
 
+  // Progress Goal functions
   const getGoalProgress = (goalId, targetNominal) => {
     const goalTransactions = transactions.filter(
       t => t.id_tabungan === goalId
@@ -100,6 +112,7 @@ function SavingsPage() {
     };
   };
 
+  // Warning Goals functions
   const getDaysRemaining = (targetDate) => {
     const today = new Date();
     const target = new Date(targetDate);
@@ -108,6 +121,7 @@ function SavingsPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
+  // Modal functions
   const openAddGoalModal = () => {
     setEditingGoal(null);
     setFormData({
@@ -132,7 +146,13 @@ function SavingsPage() {
     setShowGoalModal(true);
   };
 
+  const openDeleteModal = (goal) => {
+    console.log("Goal to delete:", goal);
+    setGoalToDelete(goal);
+    setShowDeleteModal(true);
+  };
 
+  // handle functions
   const handleSubmitGoal = async (e) => {
     e.preventDefault();
     setAddLoading(true);
@@ -158,6 +178,8 @@ function SavingsPage() {
 
     if (res.ok) {
       setShowGoalModal(false);
+      setSuccessMessage(editingGoal ? 'Goal updated successfully!' : 'Goal added successfully!');
+      setShowSuccessModal(true);
       fetchData();
     }
     setAddLoading(false);
@@ -167,12 +189,6 @@ function SavingsPage() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     window.location.href = '/login';
-  };
-
-  const openDeleteModal = (goal) => {
-    console.log("Goal to delete:", goal); // Check your browser console
-    setGoalToDelete(goal);
-    setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -217,6 +233,8 @@ function SavingsPage() {
       const data = await response.json();
       if (data.status === 'success') {
         setShowAddDepositModal(false);
+        setSuccessMessage(`Successfully deposited to ${selectedGoal.nama_tabungan}!`);
+        setShowSuccessModal(true);
         setNewDeposit({
           nominal: '',
           tanggal: new Date().toISOString().split('T')[0]
@@ -230,6 +248,7 @@ function SavingsPage() {
     }
   };
 
+  // Currency functions
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -238,6 +257,7 @@ function SavingsPage() {
     }).format(amount);
   };
 
+  // Filter functions
   const activeGoals = goals.filter(goal => goal.status === 'aktif');
   const completedGoals = goals.filter(goal => goal.status === 'selesai');
   const canceledGoals = goals.filter(goal => goal.status === 'cancel');
@@ -252,21 +272,32 @@ function SavingsPage() {
     .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
     .slice(0, 3);
 
+  // Filter Tabs
   const TabButton = ({ id, label, count, icon: Icon }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`relative flex items-center gap-2 px-4 py-2 transition-all ${
+      className={`relative flex items-center gap-2 px-4 py-3 transition-all cursor-pointer ${
         activeTab === id ? "text-white" : "text-gray-400 hover:text-gray-200"
       }`}
     >
-      <Icon size={18} />
-      <span className="font-medium">{label}</span>
-      <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full">{count}</span>
+      <Icon size={18} className="shrink-0" />
       
+      {/* Label: Hidden on small mobile, visible on tablet/desktop (md:) */}
+      <span className="font-medium text-sm sm:block">{label}</span>
+      
+      {/* Count Badge */}
+      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+        activeTab === id ? "bg-[#7fa654] text-white" : "bg-white/10 text-gray-400"
+      }`}>
+        {count}
+      </span>
+      
+      {/* Active Underline - Matches the width of the button */}
       {activeTab === id && (
         <motion.div
           layoutId="activeTab"
           className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7fa654]"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
     </button>
@@ -281,10 +312,10 @@ function SavingsPage() {
         />
 
         {loading ? (
-          /* Show Skeleton while loading */
+          // Show Skeleton while loading 
           <SavingsSkeleton />
         ) : (
-          /* Show actual content when loading is finished */
+          // Show content when loading is finished
           <>
             <StatsCard
               activeGoals={activeGoals}
@@ -300,11 +331,13 @@ function SavingsPage() {
               setShowAddDepositModal={setShowAddDepositModal}
             />
 
-            <div className="flex items-center gap-4 mb-6 border-b border-white/10">
+            {/* Tabs */}
+            <div className="flex items-center gap-2 md:gap-4 mb-8 border-b border-white/10 overflow-x-auto no-scrollbar whitespace-nowrap">
               <TabButton id="aktif" label="Active" count={activeGoals.length} icon={Target} />
               <TabButton id="selesai" label="Completed" count={completedGoals.length} icon={Gift} />
               <TabButton id="cancel" label="Canceled" count={canceledGoals.length} icon={XCircle} />
             </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -314,14 +347,16 @@ function SavingsPage() {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'selesai' && (
-                  <CompletedCard 
-                    completedGoals={completedGoals} 
+                  <StatusGoalCard
+                    goals={completedGoals}
+                    type="selesai"
                     formatCurrency={formatCurrency}
                   />
                 )}
                 {activeTab === 'cancel' && (
-                  <CanceledCard 
-                    canceledGoals={canceledGoals} 
+                  <StatusGoalCard
+                    goals={canceledGoals}
+                    type="cancel"
                     formatCurrency={formatCurrency}
                   />
                 )}
@@ -342,18 +377,18 @@ function SavingsPage() {
               </motion.div>
             </AnimatePresence>
 
+            <RecentActivity
+              recentTransactions={recentTransactions}
+              goals={goals}
+              formatCurrency={formatCurrency}
+            />
+
             <DeleteConfirmModal
               isOpen={showDeleteModal}
               onClose={() => setShowDeleteModal(false)}
               onConfirm={handleConfirmDelete}
               title={goalToDelete?.nama_tabungan}
               loading={deleteLoading}
-            />
-
-            <RecentActivity
-              recentTransactions={recentTransactions}
-              goals={goals}
-              formatCurrency={formatCurrency}
             />
           </>
         )}
@@ -377,6 +412,13 @@ function SavingsPage() {
         setShowAddDepositModal={setShowAddDepositModal}
         handleAddDeposit={handleAddDeposit}
         addLoading={addLoading}
+      />
+
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)} 
+        message={successMessage}
+        title={successMessage.includes("created") ? "Goal Created!" : "Success!"}
       />
     </div>
   );

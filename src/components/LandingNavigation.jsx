@@ -12,7 +12,7 @@ function LandingNavigation() {
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5 }}
     className="absolute top-0 left-0 right-0 flex justify-between items-center p-6 z-20">
-      <Link to="/" className="flex items-center gap-2 cursor-pointer focus:outline-gray-300/50 focus:outline-2 focus:outline-offset-2 drop-shadow-lg rounded-lg">
+      <Link to="/" className="flex items-center gap-2 cursor-pointer drop-shadow-lg rounded-lg">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-linear-to-br from-[#628141] to-[#536a37] shadow-lg">
           <Wallet className="w-6 h-6 text-white" />
         </div>

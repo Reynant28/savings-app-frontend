@@ -8,7 +8,7 @@ export default function StatsCard({ activeGoals, completedGoals, urgentGoals }) 
           initial={{ opacity: 0 }}
           animate={{ scale: [0.95, 1], opacity: [0, 1] }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gray-400/40 hover:bg-white/7  shadow-lg transition-all">
+          className="mb-8 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gray-400/40 hover:bg-white/7 shadow-lg transition-all">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-[#3e5229] bg-opacity-20 flex items-center justify-center">
