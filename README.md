@@ -1,16 +1,94 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Savings App Frontend
 
-Currently, two official plugins are available:
+Frontend web untuk aplikasi **Savings App**, dirancang agar pengguna dapat **memantau, mengelola, dan mengevaluasi progres tabungan** dengan antarmuka modern dan interaktif.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Aplikasi ini terhubung langsung dengan Backend API berbasis Laravel.
 
-## React Compiler
+> **Backend Repository:**  
+> https://github.com/Reynant28/savings-app-backend
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Fitur Utama
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Interactive Dashboard**  
+  Menampilkan ringkasan:
+  - tabungan aktif
+  - tabungan selesai
+  - tabungan mendesak (urgent)
+
+- **Responsive Tabs**  
+  Navigasi status tabungan yang dioptimalkan untuk mobile & desktop.
+
+- **Dynamic Progress Bar**  
+  Visualisasi progres tabungan menggunakan **Framer Motion animation**.
+
+- **Modal System**  
+  Tambah target dan deposit tanpa berpindah halaman.
+
+- **Real-time Validation**  
+  Validasi input form sebelum data dikirim ke API.
+
+---
+
+## Tech Stack
+
+- **Framework**: React.js (Vite)
+- **Styling**: Tailwind CSS
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **State Management**: React Hooks (`useState`, `useEffect`)
+
+---
+
+## Cara Menjalankan (Localhost)
+
+### 1️. Clone & Install Dependency
+```bash
+git clone https://github.com/Reynant28/savings-app-frontend.git
+cd savings-app-frontend
+npm install
+````
+
+### 2️. Konfigurasi API
+
+Pastikan `baseUrl` mengarah ke backend:
+
+```js
+const baseUrl = 'http://127.0.0.1:8000';
+```
+
+### 3️. Jalankan Aplikasi
+
+```bash
+npm run dev
+```
+
+Aplikasi akan berjalan di:
+
+```
+http://localhost:5173
+```
+
+---
+
+## Optimasi Mobile
+
+Aplikasi telah dioptimalkan untuk layar kecil dengan:
+
+* Header ringkas berbasis ikon
+* Tab bar adaptif (label otomatis disembunyikan)
+* Grid responsif (1 kolom → 3 kolom)
+
+---
+
+## Video Demonstrasi
+
+Video berisi:
+
+* Penjelasan aplikasi
+* Demonstrasi penggunaan aplikasi
+
+Link:
+[https://drive.google.com/drive/u/0/folders/1wRhFe-tW-F0LWSCmZgILfMp3njed78pO](https://drive.google.com/drive/u/0/folders/1wRhFe-tW-F0LWSCmZgILfMp3njed78pO)
